@@ -1,0 +1,751 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arquitectura Operativa | QubitElement Ã— Osteoval</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --accent:        #6366f1;
+      --accent-bright: #818cf8;
+      --accent-dim:    rgba(99,102,241,0.12);
+      --bg:            #09090b;
+      --surface:       #111116;
+      --surface-2:     #0d0d14;
+      --border:        #1e1e28;
+      --border-focus:  rgba(99,102,241,0.5);
+      --text:          #e4e4f0;
+      --muted:         #6b6b80;
+      --green:         #4ade80;
+      --green-dim:     rgba(74,222,128,0.1);
+      --red-dim:       rgba(239,68,68,0.08);
+      --red-border:    rgba(239,68,68,0.25);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 3rem 1rem 5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(99,102,241,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99,102,241,0.035) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* Glow blob */
+    body::after {
+      content: '';
+      position: fixed;
+      top: -180px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 520px;
+      background: radial-gradient(ellipse, rgba(99,102,241,0.13) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* â”€â”€â”€ CARD â”€â”€â”€ */
+    .card {
+      position: relative; z-index: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3.5rem 4rem;
+      max-width: 740px; width: 100%;
+      box-shadow:
+        0 0 0 1px rgba(99,102,241,0.07),
+        0 40px 100px rgba(0,0,0,0.65),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+      animation: slideUp 0.55s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* â”€â”€â”€ LOGO AREA â”€â”€â”€ */
+    /*
+    â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+    â•‘  LOGO: reemplaza "logo.png" por el archivo de tu logo.      â•‘
+    â•‘  Coloca logo.png en la misma carpeta que este index.html     â•‘
+    â•‘  TamaÃ±o recomendado: PNG transparente, mÃ­nimo 200px de alto  â•‘
+    â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    */
+    .logo-wrapper {
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-wrapper img {
+      height: 42px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Texto de respaldo si el logo no carga */
+    .logo-fallback {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+      display: none; /* se activa vÃ­a JS si la imagen falla */
+    }
+
+    /* â”€â”€â”€ HEADING â”€â”€â”€ */
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.65rem, 4vw, 2.25rem);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.6rem;
+    }
+
+    h1 span {
+      background: linear-gradient(130deg, var(--accent-bright) 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.93rem;
+      line-height: 1.65;
+      margin-bottom: 2.5rem;
+      max-width: 560px;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 55%);
+      margin-bottom: 2.5rem;
+      opacity: 0.25;
+    }
+
+    /* â”€â”€â”€ FIELD â”€â”€â”€ */
+    .field {
+      margin-bottom: 2.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .question-title {
+      font-size: 0.94rem;
+      font-weight: 600;
+      color: #e4e4f0;
+      letter-spacing: 0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .q-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px; height: 22px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-bright);
+      flex-shrink: 0;
+    }
+
+    .required { color: var(--accent-bright); margin-left: 2px; }
+
+    .field-note {
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.5;
+      padding-left: 30px;
+    }
+
+    /* â”€â”€â”€ INPUTS â”€â”€â”€ */
+    input[type="text"],
+    textarea {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px 15px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      width: 100%;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+      background: #0f0f18;
+    }
+
+    input[type="text"]::placeholder,
+    textarea::placeholder { color: #3a3a52; }
+
+    textarea { resize: vertical; min-height: 110px; line-height: 1.6; }
+
+    /* â”€â”€â”€ RADIO ITEMS â”€â”€â”€ */
+    .radio-group { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+
+    .radio-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      padding: 13px 16px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      font-size: 0.89rem;
+      color: #8888a8;
+      background: var(--surface-2);
+      user-select: none;
+    }
+
+    .radio-item:hover {
+      border-color: rgba(99,102,241,0.38);
+      background: rgba(99,102,241,0.04);
+      color: var(--text);
+    }
+
+    .radio-item.recommended {
+      border-color: rgba(99,102,241,0.3);
+      background: rgba(99,102,241,0.06);
+      color: #d4d4f0;
+    }
+
+    /* Multa: riesgo visual diferenciado */
+    .radio-item.warning-option {
+      border-color: var(--red-border);
+      background: var(--red-dim);
+      color: #8888a8;
+    }
+
+    .radio-item.warning-option:hover {
+      border-color: rgba(239,68,68,0.45);
+    }
+
+    .radio-item input[type="radio"] {
+      margin-top: 3px;
+      width: 16px; height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .radio-item strong { color: #fff; display: block; margin-bottom: 2px; }
+
+    .badge-rec {
+      font-size: 0.75rem;
+      color: var(--accent-bright);
+      font-weight: 500;
+      margin-top: 2px;
+      display: block;
+    }
+
+    .badge-warn {
+      font-size: 0.75rem;
+      color: #f87171;
+      font-weight: 500;
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* â”€â”€â”€ MULTA TAG â”€â”€â”€ */
+    .multa-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #f87171;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* â”€â”€â”€ SELECT â”€â”€â”€ */
+    select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px 15px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6b80' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+    }
+
+    select option { background: #111116; }
+
+    /* â”€â”€â”€ SUBMIT â”€â”€â”€ */
+    .submit-btn {
+      width: 100%;
+      padding: 15px 20px;
+      margin-top: 0.5rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 28px rgba(99,102,241,0.32);
+      letter-spacing: -0.01em;
+    }
+
+    .submit-btn:hover {
+      background: #5558e8;
+      box-shadow: 0 8px 36px rgba(99,102,241,0.48);
+      transform: translateY(-1px);
+    }
+
+    .submit-btn:active { transform: translateY(0); }
+
+    .submit-btn:disabled {
+      background: #2a2a3e;
+      box-shadow: none;
+      cursor: not-allowed;
+      color: var(--muted);
+      transform: none;
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.25);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* â”€â”€â”€ SUCCESS SCREEN â”€â”€â”€ */
+    #successScreen {
+      display: none;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+    }
+
+    .success-icon {
+      width: 64px; height: 64px;
+      background: var(--green-dim);
+      border: 1px solid rgba(74,222,128,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.75rem;
+    }
+
+    #successScreen h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.9rem;
+      color: #fff;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    #successScreen p {
+      color: var(--muted);
+      font-size: 0.96rem;
+      line-height: 1.65;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .success-steps {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .success-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(99,102,241,0.06);
+      border: 1px solid rgba(99,102,241,0.15);
+      border-radius: 8px;
+      font-size: 0.87rem;
+      color: #aaaac8;
+    }
+
+    .step-dot {
+      width: 8px; height: 8px;
+      background: var(--accent-bright);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* â”€â”€â”€ RESPONSIVE â”€â”€â”€ */
+    @media (max-width: 600px) {
+      .card { padding: 2rem 1.5rem; border-radius: 16px; }
+      h1 { font-size: 1.65rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card" id="mainCard">
+
+  <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+       LOGO â€” INSTRUCCIONES:
+       1. Pon tu archivo de logo (PNG con fondo transparente)
+          en la misma carpeta que este index.html
+       2. Cambia "logo.png" por el nombre exacto de tu archivo
+       3. Si no tienes logo aÃºn, el texto "QubitElement" aparece
+          automÃ¡ticamente como respaldo
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+  <div class="logo-wrapper">
+    <img
+      src="/assets/brand/qubitelement-logo.png"
+      alt="QubitElement"
+      id="logoImg"
+      onerror="this.style.display='none'; document.getElementById('logoText').style.display='block';"
+    />
+    <span class="logo-fallback" id="logoText">QubitElement</span>
+  </div>
+  <!-- FIN ÃREA DE LOGO -->
+
+  <h1>DefiniciÃ³n de<br/><span>Arquitectura Operativa</span></h1>
+  <p class="subtitle">
+    Antes de entregarte la propuesta final, necesitamos que confirmes 6 decisiones tÃ©cnicas clave.
+    Tus respuestas definen cÃ³mo se construirÃ¡ exactamente tu sistema. Las opciones marcadas como
+    <strong style="color: var(--accent-bright);">Recomendado</strong> representan el camino mÃ¡s estable
+    y rÃ¡pido para tu clÃ­nica.
+  </p>
+
+  <div class="divider"></div>
+
+  <form id="architectureForm" novalidate>
+
+    <!-- CAMPO NOMBRE CONTACTO -->
+    <div class="field">
+      <label class="question-title" for="contactName">
+        <span class="q-num">â†’</span>
+        Â¿Con quiÃ©n estamos hablando?<span class="required">*</span>
+      </label>
+      <p class="field-note">Nombre completo de quien responde este formulario.</p>
+      <input
+        type="text"
+        id="contactName"
+        name="contacto_nombre"
+        placeholder="Ej: MarÃ­a GonzÃ¡lez"
+        required
+        autocomplete="name"
+      />
+    </div>
+
+    <!-- P1: DOMINIO -->
+    <div class="field">
+      <label class="question-title">
+        <span class="q-num">1</span>
+        Estrategia de Plataforma (Dominio)<span class="required">*</span>
+      </label>
+      <p class="field-note">
+        La web actual con Redmasiva sigue fallando. Para garantizar que el nuevo sistema estÃ© siempre disponible
+        y no depender de terceros, necesitamos definir dÃ³nde vive el portal de reservas.
+      </p>
+      <div class="radio-group">
+        <label class="radio-item recommended">
+          <input type="radio" name="p1_dominio" value="Enlace exclusivo (Recomendado)" required />
+          <div>
+            <strong>SÃ­, avancemos con un enlace exclusivo.</strong>
+            <span class="badge-rec">âœ¦ Recomendado â€” Control total, sin depender de Redmasiva. Lanzamiento en 24h.</span>
+          </div>
+        </label>
+        <label class="radio-item warning-option">
+          <input type="radio" name="p1_dominio" value="Esperar acceso agencia actual" />
+          <div>
+            Prefiero esperar e intentar recuperar los accesos de la agencia actual.
+            <span class="badge-warn">âš  Riesgo â€” Los plazos con agencias pueden extenderse semanas.</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- P2: WHATSAPP -->
+    <div class="field">
+      <label class="question-title">
+        <span class="q-num">2</span>
+        Infraestructura de WhatsApp<span class="required">*</span>
+      </label>
+      <p class="field-note">
+        Conectar el bot de automatizaciÃ³n al nÃºmero principal de la clÃ­nica desactivarÃ¡ WhatsApp Web
+        en todos los dispositivos actuales. Para evitar interrupciones operativas, recomendamos
+        una lÃ­nea secundaria dedicada al sistema.
+      </p>
+      <div class="radio-group">
+        <label class="radio-item recommended">
+          <input type="radio" name="p2_whatsapp" value="LÃ­nea secundaria automatizada (Recomendado)" required />
+          <div>
+            <strong>SÃ­, usar una lÃ­nea secundaria automatizada.</strong>
+            <span class="badge-rec">âœ¦ Recomendado â€” El bot opera de forma independiente. El nÃºmero principal queda intacto.</span>
+          </div>
+        </label>
+        <label class="radio-item warning-option">
+          <input type="radio" name="p2_whatsapp" value="Conectar lÃ­nea principal" />
+          <div>
+            Conectar la lÃ­nea actual (entiendo que WhatsApp Web dejarÃ¡ de funcionar en los dispositivos de la clÃ­nica).
+            <span class="badge-warn">âš  Riesgo â€” PÃ©rdida de acceso manual al WhatsApp durante la transiciÃ³n.</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- P3: MULTA -->
+    <div class="field">
+      <label class="question-title">
+        <span class="q-num">3</span>
+        GestiÃ³n de la Multa por CancelaciÃ³n TardÃ­a
+        <span class="multa-tag">Etapa del workflow</span>
+        <span class="required">*</span>
+      </label>
+      <p class="field-note">
+        La multa es una etapa automatizada dentro del flujo de la clÃ­nica: cuando un paciente cancela
+        con menos de 2 horas de anticipaciÃ³n, el sistema la activa automÃ¡ticamente. AquÃ­ defines
+        cÃ³mo se procesa el cobro.
+      </p>
+      <div class="radio-group">
+        <label class="radio-item recommended">
+          <input type="radio" name="p3_pagos" value="Pago MÃ³vil / Zelle (Recomendado)" required />
+          <div>
+            <strong>Operar con Pago MÃ³vil / Zelle.</strong>
+            <span class="badge-rec">âœ¦ Recomendado â€” El bot envÃ­a los datos bancarios automÃ¡ticamente. Su equipo verifica la captura.</span>
+          </div>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="p3_pagos" value="Pasarela de pago web" />
+          <div>
+            Integrar una pasarela de pago web obligatoriamente.
+            <span class="badge-warn" style="color: var(--muted);">Nota â€” Requiere tiempo de integraciÃ³n adicional y puede generar fricciÃ³n en VE.</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- P4: LISTA DE ESPERA -->
+    <div class="field">
+      <label class="question-title">
+        <span class="q-num">4</span>
+        Lista de Espera ante Cancelaciones<span class="required">*</span>
+      </label>
+      <p class="field-note">
+        Cuando un paciente cancela y se libera un cupo, Â¿cÃ³mo debe notificar el sistema
+        a los pacientes en espera?
+      </p>
+      <div class="radio-group">
+        <label class="radio-item recommended">
+          <input type="radio" name="p4_espera" value="Aviso masivo simultÃ¡neo (Recomendado)" required />
+          <div>
+            <strong>Aviso masivo simultÃ¡neo.</strong>
+            <span class="badge-rec">âœ¦ Recomendado â€” El bot avisa a todos en la lista al mismo tiempo. El cupo es para el primero que responda.</span>
+          </div>
+        </label>
+        <label class="radio-item">
+          <input type="radio" name="p4_espera" value="Aviso secuencial uno a uno" />
+          <div>
+            Modelo secuencial â€” Escribir al primero de la lista, esperar respuesta, luego al siguiente.
+            <span class="badge-warn" style="color: var(--muted);">Nota â€” MÃ¡s lento. Los cupos pueden quedar sin llenar si nadie responde rÃ¡pido.</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- P5: SERVICIOS -->
+    <div class="field">
+      <label class="question-title" for="servicios">
+        <span class="q-num">5</span>
+        Servicios Iniciales a Automatizar (Fase 1)<span class="required">*</span>
+      </label>
+      <p class="field-note">
+        Para lanzar rÃ¡pido, nombra los 3 servicios principales con su duraciÃ³n.
+        Ej: <em>EvaluaciÃ³n osteopÃ¡tica 45 min Â· Descarga muscular 30 min Â· Seguimiento 20 min</em>
+      </p>
+      <textarea
+        id="servicios"
+        name="p5_servicios"
+        placeholder="Escribe aquÃ­ los servicios y sus duraciones..."
+        required
+      ></textarea>
+    </div>
+
+    <!-- P6: VOLUMEN -->
+    <div class="field">
+      <label class="question-title" for="volumen">
+        <span class="q-num">6</span>
+        Volumen semanal actual de citas<span class="required">*</span>
+      </label>
+      <p class="field-note">
+        Este dato define el plan de mensajerÃ­a que activamos en Twilio y el nivel de automatizaciÃ³n necesario.
+      </p>
+      <select id="volumen" name="p6_volumen" required>
+        <option value="" disabled selected>Selecciona el rango aproximadoâ€¦</option>
+        <option value="Menos de 20 citas/semana">Menos de 20 citas por semana</option>
+        <option value="20 a 50 citas/semana">Entre 20 y 50 citas por semana</option>
+        <option value="MÃ¡s de 50 citas/semana">MÃ¡s de 50 citas por semana</option>
+      </select>
+    </div>
+
+    <!-- SUBMIT -->
+    <button type="submit" class="submit-btn" id="submitBtn">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">Confirmar Arquitectura y Solicitar Propuesta</span>
+    </button>
+
+  </form>
+</div>
+
+<!-- â”€â”€â”€ PANTALLA DE Ã‰XITO â”€â”€â”€ -->
+<div id="successScreen" style="display:none;">
+  <div class="card" style="text-align: center;">
+    <div class="success-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+           stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <h2 style="font-family:'Syne',sans-serif; font-size:1.9rem; color:#fff; margin-bottom:0.8rem; letter-spacing:-0.02em;">
+      Arquitectura Confirmada
+    </h2>
+    <p style="color:var(--muted); font-size:0.95rem; line-height:1.65; max-width:420px; margin:0 auto;">
+      Recibimos tus decisiones tÃ©cnicas. En las prÃ³ximas horas recibirÃ¡s la propuesta
+      adaptada exactamente a estas configuraciones.
+    </p>
+    <div class="success-steps">
+      <div class="success-step">
+        <span class="step-dot"></span>
+        Tu propuesta tÃ©cnica llega en las prÃ³ximas horas
+      </div>
+      <div class="success-step">
+        <span class="step-dot" style="background:#c084fc;"></span>
+        RevisiÃ³n y firma del acuerdo de servicio
+      </div>
+      <div class="success-step">
+        <span class="step-dot" style="background:var(--green);"></span>
+        Kickoff de implementaciÃ³n â€” despliegue en 10 dÃ­as
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  //  WEBHOOK â€” pega aquÃ­ la URL de tu escenario en Make.com
+  //  o Zapier. No cambies nada mÃ¡s en este bloque.
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  const WEBHOOK_URL = "https://hook.us2.make.com/6fph84hqco5p0q7f95u6kengfmsx49ux";
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+  document.getElementById('architectureForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form  = e.target;
+    const fd    = new FormData(form);
+    const data  = Object.fromEntries(fd.entries());
+
+    // ValidaciÃ³n bÃ¡sica
+    const required = ['contacto_nombre','p1_dominio','p2_whatsapp','p3_pagos','p4_espera','p5_servicios','p6_volumen'];
+    const missing  = required.filter(k => !data[k] || data[k].trim() === '');
+
+    if (missing.length > 0) {
+      alert('Por favor completa todas las preguntas antes de continuar.');
+      return;
+    }
+
+    // Metadata
+    data['cliente']   = 'ClÃ­nica Osteoval';
+    data['timestamp'] = new Date().toISOString();
+
+    // Estado del botÃ³n
+    const btn     = document.getElementById('submitBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+
+    btn.disabled            = true;
+    spinner.style.display   = 'block';
+    btnText.textContent     = 'Procesando configuraciÃ³nâ€¦';
+
+    try {
+      await fetch(WEBHOOK_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(data),
+      });
+
+      document.getElementById('mainCard').style.display  = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+
+    } catch (err) {
+      console.error(err);
+      alert('Error de conexiÃ³n. Por favor intenta de nuevo.');
+      btn.disabled          = false;
+      spinner.style.display = 'none';
+      btnText.textContent   = 'Confirmar Arquitectura y Solicitar Propuesta';
+    }
+  });
+</script>
+</body>
+</html>
